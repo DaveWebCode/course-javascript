@@ -1,9 +1,5 @@
-// eslint-disable-next-line no-unused-vars
-import photosDB from './photos.json';
-// eslint-disable-next-line no-unused-vars
-import friendsDB from './friends.json';
-
 export default {
+
   getRandomElement(array) {
     if (!array.length) {
       return null;
@@ -14,12 +10,102 @@ export default {
     return array[index];
   },
 
+  async getNextPhoto() {
+    const friend = this.getRandomElement(this.friends.items);
+    const photos = await this.getFriendPhotos(friend.id);
+    const photo = this.getRandomElement(photos.items);
+    const size = this.findSize(photo);
 
-  getNextPhoto() {
-    const friend = this.getRandomElement(friendsDB);
-    const photos = photosDB[friend.id];
-    const photo = this.getRandomElement(photos);
-
-    return { friend, url: photo.url };
+    return { friend, id: photo.id, url: size.url };
   },
+
+  findSize(photo) {
+    const size = photo.sizes.find((size) => size.width >= 360);
+
+    if (!size) {
+      return photo.sizes.reduce((biggest, current) => {
+        if (current.width > biggest.width) {
+          return current;
+        }
+
+        return biggest;
+      }, photo.sizes[0]);
+    }
+
+    return size;
+  },
+
+  async init() {
+    this.photoCache = {};
+    this.friends = await this.getFriends();
+  },
+
+  login() {
+    let PERM_PHOTOS;
+    let PERM_FRIENDS;
+    return new Promise((resolve, reject) => {
+      VK.init({
+        apiId: 51768127
+      });
+
+      VK.Auth.login((response) => {
+        if (response.session) {
+          resolve(response);
+        } else {
+          console.error(response);
+          reject(response);
+        }
+      }, PERM_FRIENDS | PERM_PHOTOS);
+    });
+  },
+  // async login() {
+  //   this.photoCache = {};
+  //   this.friends = await this.getFriend();
+  // },
+
+  callApi(method, params) {
+    params.v = params.v || '5.120';
+
+    return new Promise((resolve, reject) => {
+      VK.api(method, params, (response) => {
+        if (response.error) {
+          reject(new Error(response.error.error_msg));
+        } else {
+          resolve(response.response);
+        }
+      });
+    });
+  },
+
+  getFriends() {
+    const params = {
+      fields: ['photo_50', 'photo_100'],
+    };
+
+    return this.callApi('friends.get', params);
+  },
+
+  getPhotos(owner) {
+    const params = {
+      owner_id: owner,
+    };
+
+    return this.callApi('photos.getAll', params);
+  },
+
+  async getFriendPhotos(id) {
+  const photos = this.photoCache[id];
+
+  if (photos) {
+    return photos;
+  }
+
+  photos = await this.getPhotos(id);
+
+  this.photoCache[id] = photos;
+
+  return photos;
+  },
+
+  // photoCache: {},
 };
