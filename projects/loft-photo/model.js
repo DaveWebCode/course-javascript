@@ -58,6 +58,7 @@ export default {
       }, PERM_FRIENDS | PERM_PHOTOS);
     });
   },
+  
   // async login() {
   //   this.photoCache = {};
   //   this.friends = await this.getFriend();
