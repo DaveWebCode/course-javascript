@@ -1,112 +1,97 @@
+const APP_ID = 51768127;
+const SETTINGS_FRIENDS = 2;
+const SETTINGS_PHOTOS = 4;
+
+
 export default {
-
   getRandomElement(array) {
-    if (!array.length) {
-      return null;
-    }
+    const arrLenght = array?.length || 0;
 
-    const index = Math.round(Math.random() * (array.length - 1));
-
-    return array[index];
+    const idx = Math.round(Math.random() * (arrLenght - 1));
+    return array[idx];
   },
 
-  async getNextPhoto() {
+ async getNextPhoto() {
     const friend = this.getRandomElement(this.friends.items);
-    const photos = await this.getFriendPhotos(friend.id);
+    const photos = await this.getFriendPhotos(friend);
     const photo = this.getRandomElement(photos.items);
     const size = this.findSize(photo);
-
-    return { friend, id: photo.id, url: size.url };
-  },
-
-  findSize(photo) {
-    const size = photo.sizes.find((size) => size.width >= 360);
-
-    if (!size) {
-      return photo.sizes.reduce((biggest, current) => {
-        if (current.width > biggest.width) {
-          return current;
-        }
-
-        return biggest;
-      }, photo.sizes[0]);
-    }
-
-    return size;
-  },
-
-  async init() {
-    this.photoCache = {};
-    this.friends = await this.getFriends();
+    console.log(photo);
+    return { friend, id: photo.id, url: size.url};
+   
   },
 
   login() {
-    let PERM_PHOTOS;
-    let PERM_FRIENDS;
     return new Promise((resolve, reject) => {
       VK.init({
-        apiId: 51768127
+        apiId: APP_ID,
       });
-
-      VK.Auth.login((response) => {
-        if (response.session) {
-          resolve(response);
-        } else {
-          console.error(response);
-          reject(response);
-        }
-      }, PERM_FRIENDS | PERM_PHOTOS);
-    });
+      VK.Auth.login(response => {
+          if (response.session) {
+              resolve(response);
+          } else {
+              console.error(response);
+              reject(response);
+          }
+      }, SETTINGS_FRIENDS | SETTINGS_PHOTOS);
+  });
   },
   
-  // async login() {
-  //   this.photoCache = {};
-  //   this.friends = await this.getFriend();
-  // },
+  callAPI(method, params) {
+    params.v = '5.154';
+ 
+   return new Promise((resolve, reject) => {
+       VK.api(method, params, (response) => {
+           if (response.error) {
+               reject(new Error(response.error.error_msg));
+           } else {
+               resolve(response.response);
+           }
+       });
+   });
+},
 
-  callApi(method, params) {
-    params.v = params.v || '5.120';
+getFriends() {
+  const params = {
+    fields: ['photo_50', 'photo_100']
+  };
+  return this.callAPI('friends.get', params);
+},
 
-    return new Promise((resolve, reject) => {
-      VK.api(method, params, (response) => {
-        if (response.error) {
-          reject(new Error(response.error.error_msg));
-        } else {
-          resolve(response.response);
-        }
-      });
-    });
-  },
+async init() {
+  this.photoCache = {};
+  this.friends = await this.getFriends();
+},
 
-  getFriends() {
-    const params = {
-      fields: ['photo_50', 'photo_100'],
-    };
+getPhotos(owner) {
+  return this.callAPI('photos.getAll', {owner_id: owner.id});
+},
 
-    return this.callApi('friends.get', params);
-  },
-
-  getPhotos(owner) {
-    const params = {
-      owner_id: owner,
-    };
-
-    return this.callApi('photos.getAll', params);
-  },
-
-  async getFriendPhotos(id) {
-  const photos = this.photoCache[id];
+async getFriendPhotos(friend) {
+  let photos = this.photoCache[friend.id];
 
   if (photos) {
     return photos;
+  };
+  photos = await this.getPhotos(friend);
+  this.photoCache[friend.id] = photos;
+  
+  return photos;
+},
+
+findSize(photo) {
+  const size = photo.sizes.find((size) => size.width >= 360);
+
+  if (!size) {
+    return photo.sizes.reduce((biggest, current) => {
+      if (current.width > biggest.width) {
+        return current;
+      }
+
+      return biggest;
+    }, photo.sizes[0]);
   }
 
-  photos = await this.getPhotos(id);
-
-  this.photoCache[id] = photos;
-
-  return photos;
-  },
-
-  // photoCache: {},
+  return size;
+}
 };
