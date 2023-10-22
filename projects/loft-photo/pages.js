@@ -4,19 +4,14 @@ const pagesMap = {
   profile: '.page-profile',
 };
 
+let currentPage = null;
+
 export default {
   openPage(name) {
-    const selector = pagesMap[name];
-    const element = document.querySelector(selector);
-    const classArray = Object.values(pagesMap);
+    const element = document.querySelector(pagesMap[name]);
 
-    classArray.forEach((currentClass) => {
-      const currentElement = document.querySelector(currentClass);
-
-      if (!currentElement.classList.contains('hidden')) {
-        currentElement.classList.add('hidden');
-      }
-    });
-    element.classList.remove('hidden');
+    currentPage?.classList.add('hidden');
+    currentPage = element;
+    currentPage.classList.remove('hidden');
   },
 };
