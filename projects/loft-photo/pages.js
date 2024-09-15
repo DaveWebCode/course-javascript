@@ -4,15 +4,14 @@ const pagesMap = {
   profile: '.page-profile',
 };
 
-let currrentPage = null;
+let currentPage = null;
 
 export default {
   openPage(name) {
-    const selector = pagesMap[name];
-    const element = document.querySelector(selector);
+    const element = document.querySelector(pagesMap[name]);
 
-    currrentPage?.classList.add('hidden');
-    currrentPage = element;
-    currrentPage.classList.remove('hidden');
+    currentPage?.classList.add('hidden');
+    currentPage = element;
+    currentPage.classList.remove('hidden');
   },
 };

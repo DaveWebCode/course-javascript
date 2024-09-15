@@ -60,10 +60,20 @@ module.exports = {
         loader: 'babel-loader',
         options: { cacheDirectory: true },
       },
+      // {
+      //   test: /projects\/.+\.html$/,
+      //   use: [{ loader: './scripts/html-inject-loader.js' }, { loader: 'html-loader' }],
+      // },
       {
-        test: /projects\/.+\.html$/,
-        use: [{ loader: './scripts/html-inject-loader.js' }, { loader: 'html-loader' }],
-      },
+        test: /\.html/,
+        include: [path.resolve(__dirname, 'projects')],
+        use: [
+          {loader: './scripts/html-inject-loader.js'},
+          {
+            loader: 'raw-loader',
+          },
+        ],
+      },      
       {
         test: /\.(jpe?g|png|gif|svg|eot|ttf|woff|woff2)$/i,
         type: 'asset/resource',
@@ -72,13 +82,13 @@ module.exports = {
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader'],
       },
-      {
-        test: /\.html\.hbs$/,
-        use: [
-          { loader: './scripts/html-to-dom-loader.js' },
-          { loader: 'handlebars-loader' },
-        ],
-      },
+      // {
+      //   test: /\.html\.hbs$/,
+      //   use: [
+      //     { loader: './scripts/html-to-dom-loader.js' },
+      //     { loader: 'handlebars-loader' },
+      //   ],
+      // },
       {
         test: /\.hbs$/,
         exclude: /\.html\.hbs$/,
